@@ -1,204 +1,135 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Intelligent lighting system for plant growth
-#
-# Get temperature from COM-port
-# Analysis settings
-# Write commands to COM-port
-
-import os
 
 import serial
 from datetime import datetime, date, time
-from time import sleep
 
-port = "COM4"
+port = "COM2"
 baud = 9600
 COMMAND = ""
 SERIAL_PORT = None
-LIGHT_PERIODS = []
+LIGHT_PERIODS = [[6, 0, "1"], [7, 0, "2"], [20, 0, "1"], [22, 0, "2"], [0, 0, "2"]]
 FLAG = ""
-LIGHT_POWER_LEVEL = 70
+LIGHT_POWER_LEVEL_MIN = 65
+LIGHT_POWER_LEVEL_MAX = 103
 LIGHT_POWER = 0
-SERIAL_PORT_RECONNECT_TIMEOUT = 5
+# Average LIGHT_POWER - of last 5 datas
+LIGHT_POWER_AVG = 0
+LIGHT_POWER_AVG_LIST = []
+
+
+def getAVG_LIGHT_POWER():
+    global LIGHT_POWER_AVG, LIGHT_POWER_AVG_LIST, LIGHT_POWER
+    while (len(LIGHT_POWER_AVG_LIST) < 6):
+        LIGHT_POWER_AVG_LIST.append(LIGHT_POWER)
+    LIGHT_POWER_AVG_LIST.pop(0)
+
+    lp_avg = 0
+    for lp in LIGHT_POWER_AVG_LIST:
+        lp_avg += lp
+    LIGHT_POWER_AVG = int(lp_avg / 5)
+    # print("LIGHT_POWER_AVG =",LIGHT_POWER_AVG)
+
 
 def checkFlag():
-    global FLAG, COMMAND, LIGHT_POWER, LIGHT_POWER_LEVEL
+    global FLAG, COMMAND, LIGHT_POWER, LIGHT_POWER_LEVEL_MIN, LIGHT_POWER_AVG, LIGHT_POWER_LEVEL_MAX
     ff = open("FLAG.TXT", 'r')
     FLAG = ff.read()
     ff.close()
     ret_code = 1
 
-    if(LIGHT_POWER > (LIGHT_POWER_LEVEL+2)):
+    ff = open("LIGHT_POWER_LEVEL.TXT", 'r')
+    Light_power_levels = ff.read()
+    Light_power_level_min, Light_power_level_max = Light_power_levels.split("-")
+    LIGHT_POWER_LEVEL_MIN = int(Light_power_level_min)
+    LIGHT_POWER_LEVEL_MAX = int(Light_power_level_max)
+    ff.close()
+
+    if ((LIGHT_POWER_LEVEL_MAX > LIGHT_POWER_AVG > LIGHT_POWER_LEVEL_MIN) & (FLAG != "ON")):
+        ff = open("FLAG.TXT", 'w')
+        ff.write("ON")
         FLAG = "ON"
-        ret_code = -1
-    elif(LIGHT_POWER <= (LIGHT_POWER_LEVEL)):
+        ff.close()
+    elif (((LIGHT_POWER_AVG > LIGHT_POWER_LEVEL_MAX + 2) | (LIGHT_POWER_AVG < LIGHT_POWER_LEVEL_MIN - 2)) & (
+        FLAG != "OFF")):
+        ff = open("FLAG.TXT", 'w')
+        ff.write("OFF")
         FLAG = "OFF"
-        ret_code = -1
+        ff.close()
+    # ret_code = -1
+    # elif(LIGHT_POWER <= (LIGHT_POWER_LEVEL)):
+    #     FLAG = "OFF"
+    #     ret_code = -1
 
     # print(LIGHT_POWER, LIGHT_POWER_LEVEL, FLAG)
 
-    if((FLAG == "ON") & (COMMAND != "1")):
+    if ((FLAG == "ON") & (COMMAND != "1")):
         COMMAND = "1"
         SERIAL_PORT.write(COMMAND.encode('ascii'))
         return ret_code
-    elif((FLAG == "OFF") & (COMMAND != "2")):
+    elif ((FLAG == "OFF") & (COMMAND != "2")):
         COMMAND = "2"
         SERIAL_PORT.write(COMMAND.encode('ascii'))
         return ret_code
-    elif((FLAG == "ON") | (FLAG == "OFF")):
+    elif ((FLAG == "ON") | (FLAG == "OFF")):
         return ret_code
     else:
         return 0
+
 
 def checkTime():
     global COMMAND, SERIAL_PORT, LIGHT_PERIODS, LIGHT_POWER, LIGHT_POWER_LEVEL
     com = COMMAND
     for _hour, _minute, _command in LIGHT_PERIODS:
-        if ((int(datetime.today().hour) >= int(_hour)) & (int(datetime.today().minute) >= int(_minute)) & ( _command != com)):
+        if ((int(datetime.today().hour) >= int(_hour)) & (int(datetime.today().minute) >= int(_minute)) & (
+            _command != com)):
             com = _command
-    if(com != COMMAND ):
+    if (com != COMMAND):
         COMMAND = com;
         SERIAL_PORT.write(COMMAND.encode('ascii'))
 
 
-def isSerialReady():
-    global SERIAL_PORT
-    try:
-        SERIAL_PORT = serial.Serial(port, baud, timeout=1)
-        if SERIAL_PORT.isOpen():
-            return True
-    except Exception as ex:
-        print("Exeption at isSerialReady:", ex)
-        return False
-
-def getLineFromSerial():
-    line = SERIAL_PORT.readline()
-    line = str(line.decode("utf-8")).strip()
-    if (len(line) > 0):
-        return line
-    else: return None
-
-def getDataFromLine(line):
-    raw_sensor_now = ""
-    last_response = ""
-    if (line.startswith("Recieved data")): raw_sensor_now = int(line[-3:])
-    elif (line.startswith("Sent response")): last_response = int(line[-2:])
-    elif (line.startswith("***")): pass
-    else: print("unknown data from line"+line)
-    return raw_sensor_now, last_response
-
-def readParameters():
-    global FLAG, LIGHT_POWER_LEVEL, LIGHT_PERIODS
-    ret = True
-    try:
-        # Open a config file for reading
-        file = open("FLAG.TXT", 'r')
-    except IOError as e:
-        # If error
-        print(u'Read error: ', e)
-        ret = False
-        pass
-    else:
-        # If OK
-        with file:
-            FLAG = file.read()
-            file.close()
-            ret = ret & True
-    try:
-        # Open a config file for reading
-        file = open("TIMES.TXT", 'r')
-    except IOError as e:
-        # If error
-        print(u'Read error: ', e)
-        ret = False
-        pass
-    else:
-        # If OK
-        with file:
-            LIGHT_PERIODS = []
-            line = file.readline()
-            file.close()
-            if(line):
-                startHour, startMinute, stopHour, stopMinute, command = line.split()
-                LIGHT_PERIODS.append([startHour, startMinute, stopHour, stopMinute, command])
-                if (len(LIGHT_PERIODS) == 0):
-                    ret = False
-            ret = ret & True
-    try:
-        # Open a config file for reading
-        file = open("LIGHT_POWER_LEVEL.TXT", 'r')
-    except IOError as e:
-        # If error
-        print(u'Read error: ', e)
-        pass
-    else:
-        # If OK
-        with file:
-            LIGHT_POWER_LEVEL = int(file.read())
-            file.close()
-            return ret
-    return ret
-
-
-def doControl(raw_sensor_now, last_response):
-    global COMMAND
-    COMMAND = "2"
-
-    SERIAL_PORT.write(COMMAND.encode('ascii'))
-
-
-def writeLog(log_file, raw_sensor_now, last_response):
-    try:
-        today = datetime.now()
-        print(today, " | Sensor RAW: ", raw_sensor_now, ", response: ", last_response)
-        if((datetime.hour == 0) & (datetime.minute == 0) & (datetime.second == 0)):
-            log_file = 'LC-' + str(date.today()) + "-.log"
-        f = open(log_file, 'a')
-        if (f):
-            if os.path.getsize(log_file) == 0: f.write("Date,Raw_sensor,response")
-            txt_to_log = "\n"+str(today)+","+str(raw_sensor_now)+","+str(last_response)
-            f.write(txt_to_log)
-            f.flush()
-            f.close()
-    except IOError as e:
-        # If error
-        print(u'I/O error: ', e)
-
 if __name__ == "__main__":
-    # Проверка готовности порта
-    # Check port for i/o operations
-    while not isSerialReady():
-        print("Serial port", port,"is not ready. Reconnect in", SERIAL_PORT_RECONNECT_TIMEOUT, "seconds")
-        sleep(SERIAL_PORT_RECONNECT_TIMEOUT)
-        pass
+    _str = ""
+    COMMAND = "2"
+    SERIAL_PORT = serial.Serial(port, baud, timeout=1)
+    # open the serial port
+    if SERIAL_PORT.isOpen():
+        filename = 'svet' + str(date.today()) + ".log"
 
-    # Основной цикл
-    # Main loop
-    log_file = 'LC-' + str(date.today()) + "-.log"
+        print(SERIAL_PORT.name + ' is open...')
+        SERIAL_PORT.write(COMMAND.encode('ascii'))
     while True:
         try:
-            # read string data (line) from COM port
-            line = getLineFromSerial()
-            # get data
-            if(line != None):
-                print(line)
-                raw_sensor_now, last_response = getDataFromLine(line)
-                # read params max 3 times
-                try_count = 1
-                while(not readParameters()):
-                    if try_count == 3: break
-                    else:
-                        print("Reading parameters - failed. Try No=", try_count)
-                        try_count+=1
-                # control lamps
-                doControl(raw_sensor_now, last_response)
-                writeLog(log_file, raw_sensor_now, last_response)
-        except Exception as ex:
-            print(ex)
-            pass
+            line = SERIAL_PORT.readline()
+            today = datetime.now()
+            _str = str(line.decode("utf-8")).strip()
+            if ((len(_str) > 0) & (_str.startswith("data"))):
+                lp, resp = _str.split()
+                LIGHT_POWER = int(lp[4:])
+                getAVG_LIGHT_POWER()
+                _str = str(today) + "," + str(LIGHT_POWER) + "," + str(resp)
+                print(today, " lp =", LIGHT_POWER, " resp =", resp)
+                if datetime.hour == datetime.minute == datetime.second == 0:
+                    filename = 'svet' + str(date.today()) + ".log"
+                f = open(filename, 'a')
+                if (f):
+                    f.write("\n" + _str)
+                    f.flush()
+                    f.close()
+                else:
+                    print("File Error")
+            elif (len(_str) > 0):
+                print(today, _str)
+
+            if (checkFlag() == 0):
+                checkTime()
+                # elif(checkFlag() == -1):
+                #     checkTime()
 
 
+        except OSError:
+            print('cannot open')
 
 
 
