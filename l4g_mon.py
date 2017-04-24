@@ -10,6 +10,7 @@ COMMAND = ""
 SERIAL_PORT = None
 LIGHT_PERIODS = [[6, 0, "1"], [7, 0, "2"], [20, 0, "1"], [22, 0, "2"], [0, 0, "2"]]
 FLAG = ""
+SoftFLAG = ""
 LIGHT_POWER_LEVEL_MIN = 65
 LIGHT_POWER_LEVEL_MAX = 103
 LIGHT_POWER = 0
@@ -17,9 +18,10 @@ LIGHT_POWER = 0
 LIGHT_POWER_AVG = 0
 LIGHT_POWER_AVG_LIST = []
 
-
+# Подсчет среднего значения показаний датчика
 def getAVG_LIGHT_POWER():
     global LIGHT_POWER_AVG, LIGHT_POWER_AVG_LIST, LIGHT_POWER
+    # Если значений меньше 5, то список заполняется дублями
     while (len(LIGHT_POWER_AVG_LIST) < 6):
         LIGHT_POWER_AVG_LIST.append(LIGHT_POWER)
     LIGHT_POWER_AVG_LIST.pop(0)
@@ -32,7 +34,7 @@ def getAVG_LIGHT_POWER():
 
 
 def checkFlag():
-    global FLAG, COMMAND, LIGHT_POWER, LIGHT_POWER_LEVEL_MIN, LIGHT_POWER_AVG, LIGHT_POWER_LEVEL_MAX
+    global SoftFLAG, FLAG, COMMAND, LIGHT_POWER, LIGHT_POWER_LEVEL_MIN, LIGHT_POWER_AVG, LIGHT_POWER_LEVEL_MAX
     ff = open("FLAG.TXT", 'r')
     FLAG = ff.read()
     ff.close()
@@ -45,29 +47,24 @@ def checkFlag():
     LIGHT_POWER_LEVEL_MAX = int(Light_power_level_max)
     ff.close()
 
-    if ((LIGHT_POWER_LEVEL_MAX > LIGHT_POWER_AVG > LIGHT_POWER_LEVEL_MIN) & (FLAG != "ON")):
-        ff = open("FLAG.TXT", 'w')
-        ff.write("ON")
-        FLAG = "ON"
-        ff.close()
+    # Проверка показаний датчика
+    if ((LIGHT_POWER_LEVEL_MAX > LIGHT_POWER_AVG > LIGHT_POWER_LEVEL_MIN) & (SoftFLAG != "ON")):
+        SoftFLAG = "ON"
     elif (((LIGHT_POWER_AVG > LIGHT_POWER_LEVEL_MAX + 2) | (LIGHT_POWER_AVG < LIGHT_POWER_LEVEL_MIN - 2)) & (
-        FLAG != "OFF")):
-        ff = open("FLAG.TXT", 'w')
-        ff.write("OFF")
-        FLAG = "OFF"
-        ff.close()
-    # ret_code = -1
-    # elif(LIGHT_POWER <= (LIGHT_POWER_LEVEL)):
-    #     FLAG = "OFF"
-    #     ret_code = -1
+        SoftFLAG != "OFF")):
+        SoftFLAG = "OFF"
 
-    # print(LIGHT_POWER, LIGHT_POWER_LEVEL, FLAG)
 
-    if ((FLAG == "ON") & (COMMAND != "1")):
+
+    if (((FLAG == "ON") | (SoftFLAG == "ON")) & (COMMAND != "1")):
         COMMAND = "1"
         SERIAL_PORT.write(COMMAND.encode('ascii'))
         return ret_code
     elif ((FLAG == "OFF") & (COMMAND != "2")):
+        COMMAND = "2"
+        SERIAL_PORT.write(COMMAND.encode('ascii'))
+        return ret_code
+    elif ((FLAG != "OFF") & (FLAG != "ON") & (COMMAND != "2") & ((SoftFLAG == "OFF"))):
         COMMAND = "2"
         SERIAL_PORT.write(COMMAND.encode('ascii'))
         return ret_code
