@@ -1,0 +1,62 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <meta http-equiv="refresh" content="5">
+        <link rel="stylesheet" href="{{ url_for('static', filename = 'main.css') }}"/>
+        <title>{{title}}</title>
+
+        <script type="text/javascript" src="{{ url_for('static', filename = 'reload.js') }}"></script>
+
+    </head>
+    <body onload="run();">
+        <table class="noborder">
+            <tr width="100%">
+                <td class="l-border"></td>
+                <td class="data">
+                    {% if status %}
+                        <p class="status">Свет включен.</p>
+                    {% else %}
+                        <p class="status">Свет выключен.</p>
+                    {% endif %}
+                </td>
+                <td class="r-border"></td>
+            </tr>
+            <tr>
+                <td class="l-border"></td>
+                <td class="data">
+                    {% if status %}
+                        <a href="/do?switchto=OFF">
+                            <img src="{{ url_for('static', filename = 'switch-on-button.png') }}">
+                        </a>
+                    {% else %}
+                        <a href="/do?switchto=ON">
+                            <img src="{{ url_for('static', filename = 'switch-off-button.png') }}">
+                        </a>
+                    {% endif %}
+                </td>
+                <td class="r-border"></td>
+            </tr>
+            <tr>
+                <td class="l-border"></td>
+                <td class="data">
+                    {% if flag == "ON" or flag == "OFF" %}
+                        <p class="autoButton"><a href="/do?switchto=soft">Включить автоматический режим</a></p>
+                    {% endif %}
+                </td>
+                <td class="r-border"></td>
+            </tr>
+            <tr>
+                <td class="l-border"></td>
+                <td class="data">
+                    {% if flag == "ON" %}
+                        <p class="warning">Свет включен вручную!</p>
+                    {% elif flag == "OFF" %}
+                        <p class="warning">Свет выключен вручную!</p>
+                    {% endif %}
+                </td>
+                <td class="r-border"></td>
+            </tr>
+        </table>
+    </body>
+</html>

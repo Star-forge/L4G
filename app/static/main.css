@@ -1,0 +1,18 @@
+TABLE {
+	BORDER-COLLAPSE: collapse; MARGIN-RIGHT: 0px; width:100%
+}
+.noborder {
+	BORDER-BOTTOM-STYLE: none; BORDER-RIGHT-STYLE: none; BORDER-TOP-STYLE: none; BORDER-LEFT-STYLE: none
+}
+.warning {
+    font-size:24px; display:block; color: red; text-align: center;
+}
+.status{
+    font-size:48px; font-weight:bold; display:block; text-align: center;
+}
+.l-border {width:10%}
+.r-border {width:10%}
+.data{text-align: center;}
+.autoButton{
+    font-size:36px; color: green; text-align: center;
+}
