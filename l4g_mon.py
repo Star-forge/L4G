@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import threading
+
 import urllib3
 
 import serial
@@ -12,13 +14,11 @@ SERIAL_PORT = None
 
 UTRO = [6, 0, 7, 0, True]
 VECHER = [20, 0, 22, 0, True]
-NOCH1 = [22, 0, 23, 59, False]
-NOCH2 = [0, 0, 6, 0, False]
+NOCH = [0, 0, 23, 59, False]
 LIGHT_PERIODS = []
 LIGHT_PERIODS.append(UTRO)
 LIGHT_PERIODS.append(VECHER)
-LIGHT_PERIODS.append(NOCH1)
-LIGHT_PERIODS.append(NOCH2)
+LIGHT_PERIODS.append(NOCH)
 SERVER_ADDR = "217.71.231.9:9999"
 
 FLAG = ""
@@ -80,10 +80,10 @@ def checkLightPower():
     # Проверка показаний датчика
     # Если входит в диапазон
     if (LIGHT_POWER_LEVEL_MAX > LIGHT_POWER_AVG > LIGHT_POWER_LEVEL_MIN):
-        return False
+        return True
     # Если НЕ входит в диапазон, 2 сделано для отсечки частых переключений
     elif ((LIGHT_POWER_AVG > LIGHT_POWER_LEVEL_MAX + 2) | (LIGHT_POWER_AVG < LIGHT_POWER_LEVEL_MIN - 2)):
-        return True
+        return False
     # print(LIGHT_POWER_LEVEL_MIN, LIGHT_POWER_AVG, LIGHT_POWER_LEVEL_MAX)
     return None
 
@@ -146,6 +146,10 @@ def checkTime():
         COMMAND = com;
         SERIAL_PORT.write(COMMAND.encode('ascii'))
 
+def fetch(SERVER_ADDR, LIGHT_POWER, resp):
+    http = urllib3.PoolManager()
+    URL = SERVER_ADDR + "/do?lp=" + str(LIGHT_POWER) + "&resp=" + str(resp)
+    return http.request('GET', URL, )
 
 if __name__ == "__main__":
     _str = ""
@@ -165,6 +169,7 @@ if __name__ == "__main__":
     while True:
         try:
             line = SERIAL_PORT.readline()
+            # print(line)
             today = datetime.now()
             _str = str(line.decode("utf-8")).strip()
             if((len(_str) > 0) & (_str.startswith("data"))):
@@ -173,10 +178,13 @@ if __name__ == "__main__":
                 getAVG_LIGHT_POWER()
                 _str = str(today) + "," + str(LIGHT_POWER) + "," + str(resp)
                 print(today, " lp =", LIGHT_POWER, " resp =", resp)
-                http = urllib3.PoolManager()
-                URL = SERVER_ADDR + "/do?lp=" + str(LIGHT_POWER) + "&resp=" + str(resp)
-                response = http.request('GET', URL)
-                if datetime.hour == datetime.minute == datetime.second == 0:
+
+                t = threading.Thread(target=fetch, args=[SERVER_ADDR, LIGHT_POWER, resp]).start()
+                # http = urllib3.PoolManager()
+                # URL = SERVER_ADDR + "/do?lp=" + str(LIGHT_POWER) + "&resp=" + str(resp)
+                # response = http.request('GET', URL, )
+                now = datetime.time(datetime.now())
+                if((now.hour >= 0) & (now.minute >= 0)):
                     filename = 'svet' + str(date.today()) + ".log"
                 f = open(filename, 'a')
                 if (f):
