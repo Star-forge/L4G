@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import os
 import threading
 
 import urllib3
-
+from terminaltables import AsciiTable
 import serial
 from datetime import datetime, date, time
 
@@ -12,13 +13,14 @@ baud = 9600
 COMMAND = ""
 SERIAL_PORT = None
 
-UTRO = [6, 0, 7, 0, True]
-VECHER = [20, 0, 22, 0, True]
-NOCH = [0, 0, 23, 59, False]
+TIME_ON = [6, 0, 22, 0, True]
+TIME_OFF = [0, 0, 23, 59, False]
+FLAGTXT = "C:\\Users\\Starforge\\FLAG.TXT"
+LIGHT_POWER_LEVELTXT = "C:\\Users\\Starforge\\LIGHT_POWER_LEVEL.TXT"
+
 LIGHT_PERIODS = []
-LIGHT_PERIODS.append(UTRO)
-LIGHT_PERIODS.append(VECHER)
-LIGHT_PERIODS.append(NOCH)
+LIGHT_PERIODS.append(TIME_ON)
+LIGHT_PERIODS.append(TIME_OFF)
 SERVER_ADDR = "217.71.231.9:9999"
 
 FLAG = ""
@@ -65,7 +67,7 @@ def checkTimes():
 
 def readLPConf():
     # Чтение конфига с уровнями освещения
-    ff = open("LIGHT_POWER_LEVEL.TXT", 'r')
+    ff = open(LIGHT_POWER_LEVELTXT, 'r')
     Light_power_levels = ff.read()
     ff.close()
     return int(Light_power_levels.split("-")[0]), int(Light_power_levels.split("-")[1])
@@ -89,18 +91,18 @@ def checkLightPower():
 
 def checkFLAG():
     global SoftFLAG, FLAG, COMMAND, LIGHT_POWER, LIGHT_POWER_LEVEL_MIN, LIGHT_POWER_AVG, LIGHT_POWER_LEVEL_MAX
-    ff = open("FLAG.TXT", 'r')
+    ff = open(FLAGTXT, 'r')
     FLAG = ff.read()
     ff.close()
 
 def checkFlag():
     global SoftFLAG, FLAG, COMMAND, LIGHT_POWER, LIGHT_POWER_LEVEL_MIN, LIGHT_POWER_AVG, LIGHT_POWER_LEVEL_MAX
-    ff = open("FLAG.TXT", 'r')
+    ff = open(FLAGTXT, 'r')
     FLAG = ff.read()
     ff.close()
     ret_code = 1
 
-    ff = open("LIGHT_POWER_LEVEL.TXT", 'r')
+    ff = open(LIGHT_POWER_LEVELTXT, 'r')
     Light_power_levels = ff.read()
     Light_power_level_min, Light_power_level_max = Light_power_levels.split("-")
     LIGHT_POWER_LEVEL_MIN = int(Light_power_level_min)
@@ -151,10 +153,37 @@ def fetch(SERVER_ADDR, LIGHT_POWER, resp):
     URL = SERVER_ADDR + "/do?lp=" + str(LIGHT_POWER) + "&resp=" + str(resp)
     return http.request('GET', URL, )
 
+def print2console(today, lp, resp, flag, sflag, old_com, new_com, ct, clp):
+    if flag == "": flag = "None"
+    sflag = "ON" if sflag == "True" else "OFF"
+    old_com = "ON" if old_com == "1" else "OFF"
+    new_com = "ON" if new_com == "1" else "OFF"
+
+    date_info =                 "Date = "+ today
+    lp_info =                   "Light power = "+ lp.zfill(3)
+    resp_info =                 "Response = "+ resp
+    manual_status =             "Manual status = "+ flag
+    soft_status =               "Soft status   = " + sflag
+    old_command_info =          "Old command = " + old_com
+    new_command_info =          "New command = " + new_com
+    check_time_info =           "Check time  = " + ct
+    check_light_power_info =    "Check light = " + clp
+
+    table_data = [
+        [date_info, lp_info, resp_info],
+        [manual_status, old_command_info, check_time_info],
+        [soft_status, new_command_info, check_light_power_info],
+    ]
+    table = AsciiTable(table_data)
+
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print (table.table)
+
 if __name__ == "__main__":
     _str = ""
     COMMAND = "2"
     SoftFLAG = False
+    lp, resp = 0, 0
     try:
         SERIAL_PORT = serial.Serial(port, baud, timeout=1)
     except serial.serialutil.SerialException as se:
@@ -177,12 +206,12 @@ if __name__ == "__main__":
                 LIGHT_POWER = int(lp[4:])
                 getAVG_LIGHT_POWER()
                 _str = str(today) + "," + str(LIGHT_POWER) + "," + str(resp)
-                print(today, " lp =", LIGHT_POWER, " resp =", resp)
 
-                t = threading.Thread(target=fetch, args=[SERVER_ADDR, LIGHT_POWER, resp]).start()
-                # http = urllib3.PoolManager()
-                # URL = SERVER_ADDR + "/do?lp=" + str(LIGHT_POWER) + "&resp=" + str(resp)
-                # response = http.request('GET', URL, )
+                # print(today, " lp =", LIGHT_POWER, " resp =", resp) change to print2console
+
+                # Отправка данных на веб сервер
+                threading.Thread(target=fetch, args=[SERVER_ADDR, LIGHT_POWER, resp]).start()
+
                 now = datetime.time(datetime.now())
                 if((now.hour >= 0) & (now.minute >= 0)):
                     filename = 'svet' + str(date.today()) + ".log"
@@ -213,13 +242,15 @@ if __name__ == "__main__":
 
                     clp = checkLightPower()
                     if (clp != None):
-                        SFLAG = clp | SFLAG
+                        SFLAG = clp & SFLAG
 
                     if(SFLAG):
                         COMMAND = "1"
                     elif(SFLAG == False):
                         COMMAND = "2"
-                # print('COMMAND =', COMMAND, 'FLAG =', FLAG, 'SoftFLAG =', SFLAG, 'OLD COMMAND =', com, ct, clp)
+
+                print2console(str(today), str(LIGHT_POWER), str(resp), str(FLAG), str(SFLAG), str(com), str(COMMAND), str(ct), str(clp))
+
                 SoftFLAG = SFLAG
                 if (com != COMMAND):
                     SERIAL_PORT.write(COMMAND.encode('ascii'))
