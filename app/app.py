@@ -29,11 +29,8 @@ def checkSTATUS():
 def index():
     global FLAG, STATUS
     checkSTATUS()
-
     return render_template("index.html",
-                    title='Lamp switcher',
-                    flag=FLAG,
-                    status=STATUS)
+                    title='Lamp switcher')
 
 class WriteStatus(Resource):
     def get(self):
@@ -64,17 +61,14 @@ class WriteStatus(Resource):
                 elif (request_flag == '2'):
                     STATUS = False
 
-        return render_template("index.html",
-                               title='Lamp switcher',
-                               flag=FLAG,
-                               status=STATUS)
+        return None
 
 class StatusUpdate(Resource):
-    def _is_updated(self, status_flag):
+    def _is_updated(self, status_flag, manual_flag):
         global FLAG, STATUS
         checkSTATUS()
-        if(STATUS != None):
-            if(status_flag.lower() != str(STATUS).lower()):
+        if((STATUS != None) & (FLAG != None)):
+            if((status_flag.lower() != str(STATUS).lower()) | (manual_flag.lower() != str(FLAG).lower())):
                 return True
         return False
 
@@ -82,10 +76,10 @@ class StatusUpdate(Resource):
         global FLAG, STATUS
         checkSTATUS()
         status_flag = request.args.get('status', 'true')
-
+        manual_flag = request.args.get('flag', 'OFF')
         request_time = str(datetime.now())
-        while not self._is_updated(status_flag):
-            time.sleep(5)
+        while not self._is_updated(status_flag, manual_flag):
+            time.sleep(0.5)
 
         return {'status': STATUS,
                 'flag': FLAG,

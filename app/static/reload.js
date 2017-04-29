@@ -1,20 +1,28 @@
 var STATUS = true;
 var FLAG = "";
 
-
-
 function updateElems(data){
     timeupdate = ''
     flagupdate = ''
     statusupdate = ''
     STATUS = data.status;
     FLAG = data.flag;
-    if(FLAG == true | FLAG == false){
+    if(FLAG == 'ON')
+    {
         $('#autobutton').css('display','block');
+        $('#manualon').css('display','block');
+        $('#manualoff').css('display','none');
+    }
+    else if(FLAG == 'OFF'){
+        $('#autobutton').css('display','block');
+        $('#manualon').css('display','none');
+        $('#manualoff').css('display','block');
     }
     else
     {
         $('#autobutton').css('display','none');
+        $('#manualon').css('display','none');
+        $('#manualoff').css('display','none');
     }
 
     if(STATUS == true){
@@ -37,8 +45,8 @@ function updateElems(data){
         }
     }
     $('#timeupdate').text("["+data.time+"]");
-    $('#flagupdate').text("["+data.flag+"]");
-    $('#statusupdate').text("["+data.status+"]");
+    $('#flagupdate').text("["+FLAG+"]");
+    $('#statusupdate').text("["+STATUS+"]");
     update();
 }
 
@@ -58,11 +66,11 @@ function switchto(status) {
  */
 function update() {
     $.ajax({
-        url: '/status-update?status='+STATUS,
+        url: '/status-update?status='+STATUS+"&flag="+FLAG,
         success:  function(data) {
             updateElems(data);
         },
-        timeout: 5000 //If timeout is reached run again
+        timeout: 500000 //If timeout is reached run again
     });
 }
 
