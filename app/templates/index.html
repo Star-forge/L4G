@@ -2,47 +2,38 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
-        <meta http-equiv="refresh" content="5">
         <link rel="stylesheet" href="{{ url_for('static', filename = 'main.css') }}"/>
         <title>{{title}}</title>
-
+        <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.1/jquery.min.js"></script>
         <script type="text/javascript" src="{{ url_for('static', filename = 'reload.js') }}"></script>
-
     </head>
-    <body onload="run();">
+    <body>
+        <div id="debug">
+            <pre id="timeupdate">No data</pre>
+            <pre id="flagupdate">No data</pre>
+            <pre id="statusupdate">No data</pre>
+        </div>
         <table class="noborder">
             <tr width="100%">
                 <td class="l-border"></td>
                 <td class="data">
-                    {% if status %}
-                        <p class="status">Свет включен.</p>
-                    {% else %}
-                        <p class="status">Свет выключен.</p>
-                    {% endif %}
+                    <p class="status" id="status">Свет включен.</p>
                 </td>
                 <td class="r-border"></td>
             </tr>
             <tr>
                 <td class="l-border"></td>
                 <td class="data">
-                    {% if status %}
-                        <a href="/do?switchto=OFF">
-                            <img src="{{ url_for('static', filename = 'switch-on-button.png') }}">
-                        </a>
-                    {% else %}
-                        <a href="/do?switchto=ON">
-                            <img src="{{ url_for('static', filename = 'switch-off-button.png') }}">
-                        </a>
-                    {% endif %}
+                    <a id='abutton' href='javascript:switchto(ON)'>
+                        <img id='ibutton' src="{{ url_for('static', filename = 'switch-on-button.png') }}">
+                    </a>
                 </td>
                 <td class="r-border"></td>
             </tr>
             <tr>
                 <td class="l-border"></td>
                 <td class="data">
-                    {% if flag == "ON" or flag == "OFF" %}
-                        <p class="autoButton"><a href="/do?switchto=soft">Включить автоматический режим</a></p>
-                    {% endif %}
+                    <p class="autoButton"><a style="display:none" id="autobutton"href="javascript:switchto('soft')">Включить автоматический режим</a></p>
                 </td>
                 <td class="r-border"></td>
             </tr>

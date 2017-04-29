@@ -80,7 +80,7 @@ def checkLightPower():
     LIGHT_POWER_LEVEL_MIN, LIGHT_POWER_LEVEL_MAX = readLPConf()
 
     # Проверка показаний датчика
-    # Если входит в диапазон
+    # Если входит в диапазон когда надо подсвечивать
     if (LIGHT_POWER_LEVEL_MAX > LIGHT_POWER_AVG > LIGHT_POWER_LEVEL_MIN):
         return True
     # Если НЕ входит в диапазон, 2 сделано для отсечки частых переключений
@@ -95,69 +95,17 @@ def checkFLAG():
     FLAG = ff.read()
     ff.close()
 
-def checkFlag():
-    global SoftFLAG, FLAG, COMMAND, LIGHT_POWER, LIGHT_POWER_LEVEL_MIN, LIGHT_POWER_AVG, LIGHT_POWER_LEVEL_MAX
-    ff = open(FLAGTXT, 'r')
-    FLAG = ff.read()
-    ff.close()
-    ret_code = 1
-
-    ff = open(LIGHT_POWER_LEVELTXT, 'r')
-    Light_power_levels = ff.read()
-    Light_power_level_min, Light_power_level_max = Light_power_levels.split("-")
-    LIGHT_POWER_LEVEL_MIN = int(Light_power_level_min)
-    LIGHT_POWER_LEVEL_MAX = int(Light_power_level_max)
-    ff.close()
-
-    # Проверка показаний датчика
-    if (LIGHT_POWER_LEVEL_MAX > LIGHT_POWER_AVG > LIGHT_POWER_LEVEL_MIN):
-        SoftFLAG = "ON"
-    elif ((LIGHT_POWER_AVG > LIGHT_POWER_LEVEL_MAX + 2) | (LIGHT_POWER_AVG < LIGHT_POWER_LEVEL_MIN - 2)):
-        SoftFLAG = "OFF"
-
-    if (((FLAG == "ON") | (SoftFLAG == "ON")) & (COMMAND != "1") & (FLAG != "OFF")):
-        print('Set COMMAND = 1, FLAG =', FLAG, 'SoftFLAG =', SoftFLAG, 'COMMAND =', COMMAND)
-        COMMAND = "1"
-        SERIAL_PORT.write(COMMAND.encode('ascii'))
-        return ret_code
-    elif ((FLAG == "OFF") & (COMMAND != "2")):
-        print('-Set COMMAND = 2, FLAG =', FLAG, 'SoftFLAG =', SoftFLAG, 'COMMAND =', COMMAND)
-        COMMAND = "2"
-        SERIAL_PORT.write(COMMAND.encode('ascii'))
-        return ret_code
-    elif ((FLAG != "OFF") & (FLAG != "ON") & (COMMAND != "2") & (SoftFLAG == "OFF")):
-        print('Set COMMAND = 2, FLAG =', FLAG, 'SoftFLAG =', SoftFLAG, 'COMMAND =', COMMAND)
-        COMMAND = "2"
-        SERIAL_PORT.write(COMMAND.encode('ascii'))
-        return ret_code
-    elif ((FLAG == "ON") | (FLAG == "OFF")):
-        # print('No doing', FLAG, SoftFLAG, COMMAND)
-        return ret_code
-    else:
-        return 0
-
-def checkTime():
-    global COMMAND, SERIAL_PORT, LIGHT_PERIODS, LIGHT_POWER, LIGHT_POWER_LEVEL
-    com = COMMAND
-    for _hour, _minute, _command in LIGHT_PERIODS:
-        if ((int(datetime.today().hour) >= int(_hour)) & (int(datetime.today().minute) >= int(_minute)) & (
-            _command != com)):
-            com = _command
-    if (com != COMMAND):
-        print('Set COMMAND =', com, 'OLD COMMAND =', COMMAND)
-        COMMAND = com;
-        SERIAL_PORT.write(COMMAND.encode('ascii'))
-
 def fetch(SERVER_ADDR, LIGHT_POWER, resp):
     http = urllib3.PoolManager()
     URL = SERVER_ADDR + "/do?lp=" + str(LIGHT_POWER) + "&resp=" + str(resp)
     return http.request('GET', URL, )
 
 def print2console(today, lp, resp, flag, sflag, old_com, new_com, ct, clp):
-    if flag == "": flag = "None"
-    sflag = "ON" if sflag == "True" else "OFF"
+    flag = "Light " + flag if (flag == "ON") | (flag == "OFF") else "Switched OFF"
+    sflag = "Light ON" if sflag == "True" else "Light OFF"
     old_com = "ON" if old_com == "1" else "OFF"
     new_com = "ON" if new_com == "1" else "OFF"
+    resp = "Light ON" if resp == "1" else "Light OFF"
 
     date_info =                 "Date = "+ today
     lp_info =                   "Light power = "+ lp.zfill(3)
