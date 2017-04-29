@@ -31,4 +31,4 @@ Priority:
     2.1. Time check  
     2.2. Light check  
 
-![Site](https://github.com/Star-forge/L4G/raw/master/docs/img/site.png)
+![Site](https://github.com/Star-forge/L4G/raw/master/docs/img/site.PNG)
