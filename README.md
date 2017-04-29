@@ -9,14 +9,14 @@ System contains 4 subsystem:
 * **Backend** - Flask REST-api web-server
   
 ### Screenshots
-![PC-based Controller (monitor)](/docs/lmg/monitor.png)
+![PC-based Controller (monitor)](https://github.com/Star-forge/L4G/raw/master/docs/img/monitor.png)
   
-**Date** - last information update datetime  
+**Date** - date and time of last information update   
 **Light power** - raw data from sensor  
 **Response** - status of lighting system on arduino in human style.
 May be *Light ON* or *Light OFF*  
-**Manual status** - manual swither info (from FLAG.TXT).
-May be *Swithed OFF* or *Light ON/OFF*  
+**Manual status** - manual switcher info (from FLAG.TXT).
+May be *Switched OFF* or *Light ON/OFF*  
 **Soft status** - status of soft switcher.
 That check data from sensor (*Check light*) and timings (*Check time*)
 and switch on/off lighting system. May be *Light ON* or *Light OFF*  
@@ -31,4 +31,4 @@ Priority:
     2.1. Time check  
     2.2. Light check  
 
-![Site](/docs/lmg/site.png)
+![Site](https://github.com/Star-forge/L4G/raw/master/docs/img/site.PNG)
