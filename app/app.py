@@ -61,7 +61,11 @@ class WriteStatus(Resource):
                 elif (request_flag == '2'):
                     STATUS = False
 
-        return None
+        request_time = str(datetime.now())
+        # print(STATUS, FLAG)
+        return {'status': STATUS,
+                'flag': FLAG,
+                'time': request_time}
 
 class StatusUpdate(Resource):
     def _is_updated(self, status_flag, manual_flag):
