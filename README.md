@@ -9,7 +9,7 @@ System contains 4 subsystem:
 * **Backend** - Flask REST-api web-server
   
 ### Screenshots
-![PC-based Controller (monitor)](/docs/lmg/monitor.png)
+![PC-based Controller (monitor)](/blob/master/docs/img/monitor.png)
   
 **Date** - last information update datetime  
 **Light power** - raw data from sensor  
@@ -31,4 +31,4 @@ Priority:
     2.1. Time check  
     2.2. Light check  
 
-![Site](/docs/lmg/site.png)
+![Site](/blob/master/docs/img/site.png)
