@@ -47,7 +47,6 @@ function updateElems(data){
     $('#timeupdate').text("["+data.time+"]");
     $('#flagupdate').text("["+FLAG+"]");
     $('#statusupdate').text("["+STATUS+"]");
-    update();
 }
 
 function switchto(status) {
@@ -67,10 +66,16 @@ function switchto(status) {
 function update() {
     $.ajax({
         url: '/status-update?status='+STATUS+"&flag="+FLAG,
-        success:  function(data) {
+        success: function(data) {
             updateElems(data);
         },
-        timeout: function(data) { update(); }//If timeout is reached run again
+        timeout: 600000,//If timeout is reached run again
+        error: function(data) {
+            //console.log("Error!");
+        },
+        complete: function(data) {
+             update();
+        }
     });
 }
 
@@ -83,6 +88,7 @@ function load() {
         url: '/status',
         success: function(data) {
             updateElems(data);
+            update();
         }
     });
 }
