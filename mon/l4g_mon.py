@@ -8,7 +8,7 @@ from terminaltables import AsciiTable
 import serial
 from datetime import datetime, date, time
 
-port = "COM2"
+port = "COM5"
 baud = 9600
 COMMAND = ""
 SERIAL_PORT = None
@@ -191,6 +191,8 @@ if __name__ == "__main__":
                     clp = checkLightPower()
                     if (clp != None):
                         SFLAG = clp & SFLAG
+                    else:
+                        ctp = ct
 
                     if(SFLAG):
                         COMMAND = "1"

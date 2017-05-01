@@ -70,7 +70,7 @@ function update() {
         success:  function(data) {
             updateElems(data);
         },
-        timeout: 500000 //If timeout is reached run again
+        timeout: function(data) { update(); }//If timeout is reached run again
     });
 }
 
