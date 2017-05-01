@@ -10,16 +10,30 @@
         <title>{{title}}</title>
     </head>
     <body>
-        <div id="debug">
-            <pre id="timeupdate">No data</pre>
-            <pre id="flagupdate">No data</pre>
-            <pre id="statusupdate">No data</pre>
-        </div>
+        <table class="noborder">
+             <tr width="100%">
+                 <td class="l-border">
+                    <div class="debug" id="debug">
+                        <pre class="debug" id="timeupdate"></pre>
+                        <pre class="debug" id="flagupdate"></pre>
+                        <pre class="debug" id="statusupdate"></pre>
+                    </div>
+                 </td>
+                 <td class="data"></td>
+                 <td class="r-border">
+                     <div id="errors">
+                        <pre class="debug" id="error"></pre>
+                    </div>
+                 </td>
+             </tr>
+        </table>
         <table class="noborder">
             <tr width="100%">
                 <td class="l-border"></td>
                 <td class="data">
-                    <p class="status" id="status">Свет включен.</p>
+                    <p class="status" id="status">Освещение включено.</p>
+                    <div style="display: none" id="manualon"><p class="warning">Освещение включено вручную!</p></div>
+                    <div style="display: none" id="manualoff"><p class="warning">Освещение выключено вручную!</p></div>
                 </td>
                 <td class="r-border"></td>
             </tr>
@@ -36,14 +50,6 @@
                 <td class="l-border"></td>
                 <td class="data">
                     <div style="display: none" id="autobutton"><p class="autoButton"><a href="javascript:switchto('soft')">Включить автоматический режим</a></p></div>
-                </td>
-                <td class="r-border"></td>
-            </tr>
-            <tr>
-                <td class="l-border"></td>
-                <td class="data">
-                    <div style="display: none" id="manualon"><p class="warning">Свет включен вручную!</p></div>
-                    <div style="display: none" id="manualoff"><p class="warning">Свет выключен вручную!</p></div>
                 </td>
                 <td class="r-border"></td>
             </tr>

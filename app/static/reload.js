@@ -54,6 +54,40 @@ function switchto(status) {
         url: '/do?switchto='+status,
         success:  function(data) {
             updateElems(data);
+            $('#error').text("")
+        },
+        error: function(xhr, status, error) {
+            $('#error').text("Зафиксирована ошибка:."+error);
+        }
+    });
+}
+
+function chkErrMsg() {
+    $.ajax({
+        url: '/status-update?status='+STATUS+"&flag="+FLAG+"&now=yes",
+        success: function(data) {
+            updateElems(data);
+            $('#error').text("")
+        },
+        timeout: 5000,//If timeout is reached run again
+        error: function(jqXHR, exception)
+        {
+            if (jqXHR.status === 0) {
+                 $('#error').text('НЕ подключен к интернету!');
+            } else if (jqXHR.status == 404) {
+                $('#error').text('НЕ найдена страница запроса [404])');
+            } else if (jqXHR.status == 500) {
+                 $('#error').text('НЕ найден домен в запросе [500].');
+            } else if (exception === 'parsererror') {
+                $('#error').text("Ошибка в коде: \n"+jqXHR.responseText);
+            } else if (exception === 'timeout') {
+                $('#error').text('Не ответил на запрос.');
+            } else if (exception === 'abort') {
+                 $('#error').text('Прерван запрос Ajax.');
+            } else {
+                 $('#error').text('Неизвестная ошибка:\n' + jqXHR.responseText);
+            }
+            chkErrMsg();
         }
     });
 }
@@ -68,13 +102,30 @@ function update() {
         url: '/status-update?status='+STATUS+"&flag="+FLAG,
         success: function(data) {
             updateElems(data);
+            $('#error').text("")
         },
         timeout: 600000,//If timeout is reached run again
-        error: function(data) {
-            //console.log("Error!");
+        error: function(jqXHR, exception)
+        {
+            if (jqXHR.status === 0) {
+                 $('#error').text('НЕ подключен к интернету!');
+            } else if (jqXHR.status == 404) {
+                $('#error').text('НЕ найдена страница запроса [404])');
+            } else if (jqXHR.status == 500) {
+                 $('#error').text('НЕ найден домен в запросе [500].');
+            } else if (exception === 'parsererror') {
+                $('#error').text("Ошибка в коде: \n"+jqXHR.responseText);
+            } else if (exception === 'timeout') {
+                $('#error').text('Не ответил на запрос.');
+            } else if (exception === 'abort') {
+                 $('#error').text('Прерван запрос Ajax.');
+            } else {
+                 $('#error').text('Неизвестная ошибка:\n' + jqXHR.responseText);
+            }
+            chkErrMsg();
         },
         complete: function(data) {
-             update();
+            update();
         }
     });
 }
@@ -87,8 +138,8 @@ function load() {
     $.ajax({
         url: '/status',
         success: function(data) {
-            updateElems(data);
             update();
+            updateElems(data);
         }
     });
 }

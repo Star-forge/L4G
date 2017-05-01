@@ -1,10 +1,10 @@
-TABLE {
+TABLE{
 	BORDER-COLLAPSE: collapse; MARGIN-RIGHT: 0px; width:100%
 }
-.noborder {
+.noborder{
 	BORDER-BOTTOM-STYLE: none; BORDER-RIGHT-STYLE: none; BORDER-TOP-STYLE: none; BORDER-LEFT-STYLE: none
 }
-.warning {
+.warning{
     font-size:24px; display:block; color: red; text-align: center;
 }
 .status{
@@ -15,4 +15,7 @@ TABLE {
 .data{text-align: center;}
 .autoButton{
     font-size:36px; color: green; text-align: center;
+}
+.debug{
+    color: red; background: lightgray;
 }

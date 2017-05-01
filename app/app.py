@@ -36,6 +36,7 @@ class WriteStatus(Resource):
     def get(self):
         global FLAG, STATUS
         checkSTATUS()
+        request_time = str(datetime.now())
         if request.method == 'GET':
             request_flag = request.args.get('switchto', '')
             if(request_flag == 'ON'):
@@ -61,7 +62,6 @@ class WriteStatus(Resource):
                 elif (request_flag == '2'):
                     STATUS = False
 
-        request_time = str(datetime.now())
         # print(STATUS, FLAG)
         return {'status': STATUS,
                 'flag': FLAG,
@@ -79,9 +79,15 @@ class StatusUpdate(Resource):
     def get(self):
         global FLAG, STATUS
         checkSTATUS()
+        request_time = str(datetime.now())
+        request_flag = request.args.get('now', '')
+        if (request_flag == 'yes'):
+            #print(STATUS, FLAG)
+            return {'status': STATUS,
+                    'flag': FLAG,
+                    'time': request_time}
         status_flag = request.args.get('status', 'true')
         manual_flag = request.args.get('flag', 'OFF')
-        request_time = str(datetime.now())
         while not self._is_updated(status_flag, manual_flag):
             time.sleep(0.5)
 
